@@ -8,10 +8,13 @@ const courseRoute = require("./routes").course;
 const passport = require("passport");
 require("./config/passport")(passport);
 const cors = require("cors");
+// Heroku 設定
+const path = require("path");
+const port = process.env.PORT || 8080;
 
-// 連結 MongoDB
+// Heroku 設定
 mongoose
-  .connect("mongodb://127.0.0.1:27017/mernDB")
+  .connect(process.env.MONGODB_CONNECTION)
   .then(() => {
     console.log("連結到mongodb...");
   })
@@ -19,10 +22,23 @@ mongoose
     console.log(e);
   });
 
+// 連結 MongoDB
+// mongoose
+//   .connect("mongodb://127.0.0.1:27017/mernDB")
+//   .then(() => {
+//     console.log("連結到mongodb...");
+//   })
+//   .catch((e) => {
+//     console.log(e);
+//   });
+
 // middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+// Heroku 設定
+app.use(express.static(path.join(__dirname, "client", "build")));
 
 app.use("/api/user", authRoute);
 // course route 應該被 jwt 保護
@@ -33,9 +49,21 @@ app.use(
   courseRoute
 );
 
-//只有登入系統的人，才能夠去新增課程或是註冊課程
-// jwt
+// Heroku 設定
+if (
+  process.env.NODE_ENV === "production" ||
+  process.env.NODE_ENV === "staging"
+) {
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+  });
+}
 
-app.listen(8080, () => {
+// Heroku 設定
+app.listen(port, () => {
   console.log("後端伺服器聆聽在port 8080.....");
 });
+
+// app.listen(8080, () => {
+//   console.log("後端伺服器聆聽在port 8080.....");
+// });
